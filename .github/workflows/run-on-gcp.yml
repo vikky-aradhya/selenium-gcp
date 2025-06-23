@@ -27,6 +27,10 @@ jobs:
       - name: Upload Extent Report and Generate Signed URL
         run: |
           echo "${{ secrets.GCP_SIGNER_KEY }}" > gcp-key.json
+          # Authenticate gcloud with service account
+          gcloud auth activate-service-account --key-file=gcp-key.json
+          gcloud config set project selenium-testing-lab
+          
           if [ -f test-output/ExtentReport.html ]; then
                 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
                 FILE_NAME="ExtentReport_$TIMESTAMP.html"
