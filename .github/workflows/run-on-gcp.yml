@@ -42,20 +42,17 @@ jobs:
 
             REPORT_LINK="https://storage.googleapis.com/selenium-test-reports/reports/ExtentReport_latest.html"
             TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-
-            cat <<EOF > email.txt
             
-From: Selenium Tests <${{ secrets.EMAIL_USER }}>
-To: ${{ secrets.EMAIL_TO }}
-Subject: Selenium Test Run: $STATUS
-
-Selenium Test Status: $STATUS
-Report Link: $REPORT_LINK
-Run Time: $TIMESTAMP
-EOF
-
-    curl -s --url "smtps://smtp.gmail.com:465" --ssl-reqd \
-        --mail-from "${{ secrets.EMAIL_USER }}" \
-        --mail-rcpt "${{ secrets.EMAIL_TO }}" \
-        --upload-file email.txt \
-        --user "${{ secrets.EMAIL_USER }}:${{ secrets.EMAIL_PASSWORD }}"
+            echo "From: Selenium Tests <${{ secrets.EMAIL_USER }}>" > email.txt
+            echo "To: ${{ secrets.EMAIL_TO }}" >> email.txt
+            echo "Subject: Selenium Test Run: $STATUS" >> email.txt
+            echo "" >> email.txt
+            echo "Selenium Test Status: $STATUS" >> email.txt
+            echo "Report Link: $REPORT_LINK" >> email.txt
+            echo "Run Time: $TIMESTAMP" >> email.txt
+            
+            curl -s --url "smtps://smtp.gmail.com:465" --ssl-reqd \
+            --mail-from "${{ secrets.EMAIL_USER }}" \
+            --mail-rcpt "${{ secrets.EMAIL_TO }}" \
+            --upload-file email.txt \
+            --user "${{ secrets.EMAIL_USER }}:${{ secrets.EMAIL_PASSWORD }}"
