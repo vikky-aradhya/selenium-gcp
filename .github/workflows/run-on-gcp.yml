@@ -29,4 +29,33 @@ jobs:
             if [ -f test-output/ExtentReport.html ]; then
                 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
                 gsutil cp test-output/ExtentReport.html gs://selenium-test-reports/reports/ExtentReport_$TIMESTAMP.html
+                gsutil cp -a public-read test-output/ExtentReport.html gs://selenium-test-reports/reports/ExtentReport_latest.html
             fi
+            
+      - name: Send Email Notification
+        if: always()
+        run: |
+            STATUS="✅ Passed"
+            if [ "${{ job.status }}" != "success" ]; then
+                STATUS="❌ Failed"
+            fi
+
+            REPORT_LINK="https://storage.googleapis.com/selenium-test-reports/reports/ExtentReport_latest.html"
+            TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+
+            cat <<EOF > email.txt
+            
+From: Selenium Tests <${{ secrets.EMAIL_USER }}>
+To: ${{ secrets.EMAIL_TO }}
+Subject: Selenium Test Run: $STATUS
+
+Selenium Test Status: $STATUS
+Report Link: $REPORT_LINK
+Run Time: $TIMESTAMP
+EOF
+
+    curl -s --url "smtps://smtp.gmail.com:465" --ssl-reqd \
+        --mail-from "${{ secrets.EMAIL_USER }}" \
+        --mail-rcpt "${{ secrets.EMAIL_TO }}" \
+        --upload-file email.txt \
+        --user "${{ secrets.EMAIL_USER }}:${{ secrets.EMAIL_PASSWORD }}"
