@@ -24,13 +24,21 @@ jobs:
             git pull origin main
             mvn clean test
             
-            # Upload the report to GCS
-            
-            if [ -f test-output/ExtentReport.html ]; then
+      - name: Upload Extent Report and Generate Signed URL
+        run: |
+          echo "${{ secrets.GCP_SIGNER_KEY }}" > gcp-key.json
+          if [ -f test-output/ExtentReport.html ]; then
                 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-                gsutil cp test-output/ExtentReport.html gs://selenium-test-reports/reports/ExtentReport_$TIMESTAMP.html
-                gsutil cp -a public-read test-output/ExtentReport.html gs://selenium-test-reports/reports/ExtentReport_latest.html
-            fi
+                FILE_NAME="ExtentReport_$TIMESTAMP.html"
+                gsutil cp test-output/ExtentReport.html gs://selenium-test-reports/reports/$FILE_NAME
+          fi          
+
+          # Install openssl (needed for signurl)
+          sudo apt-get update && sudo apt-get install -y openssl
+
+          # Download gsutil signurl helper if needed
+          URL=$(gsutil signurl -d 24h gcp-key.json gs://selenium-test-reports/reports/$FILE_NAME | tail -n 1 | awk '{print $5}')
+          echo "REPORT_LINK=$URL" >> $GITHUB_ENV
             
       - name: Send Email Notification
         if: always()
@@ -39,8 +47,7 @@ jobs:
             if [ "${{ job.status }}" != "success" ]; then
                 STATUS="❌ Failed"
             fi
-
-            REPORT_LINK="https://storage.googleapis.com/selenium-test-reports/reports/ExtentReport_latest.html"
+            
             TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
             
             echo "From: Selenium Tests <${{ secrets.EMAIL_USER }}>" > email.txt
