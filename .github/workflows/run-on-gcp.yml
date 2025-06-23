@@ -23,3 +23,10 @@ jobs:
             cd selenium-gcp
             git pull origin main
             mvn clean test
+            
+            # Upload the report to GCS
+            
+            if [ -f test-output/ExtentReport.html ]; then
+                TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+                gsutil cp test-output/ExtentReport.html gs://selenium-test-reports/reports/ExtentReport_$TIMESTAMP.html
+            fi
