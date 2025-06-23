@@ -26,8 +26,9 @@ jobs:
             
       - name: Upload Extent Report and Generate Signed URL
         run: |
-          echo "${{ secrets.GCP_SIGNER_KEY }}" > gcp-key.json
-          # Authenticate gcloud with service account
+          cat > gcp-key.json <<EOF
+          ${{ secrets.GCP_SIGNER_KEY }}
+          EOF
           gcloud auth activate-service-account --key-file=gcp-key.json
           gcloud config set project selenium-testing-lab
           
