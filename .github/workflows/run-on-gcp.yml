@@ -49,15 +49,13 @@ jobs:
           REPORT_LINK=$(cat report-url.txt)
           TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
 
-          cat <<EOF > email.txt
-From: Selenium Tests <${{ secrets.EMAIL_USER }}>
-To: ${{ secrets.EMAIL_TO }}
-Subject: Selenium Test Report - $STATUS
-
-Status: $STATUS
-Report: $REPORT_LINK
-Timestamp: $TIMESTAMP
-EOF
+          echo "From: Selenium Tests <${{ secrets.EMAIL_USER }}>" > email.txt
+          echo "To: ${{ secrets.EMAIL_TO }}" >> email.txt
+          echo "Subject: Selenium Test Report - $STATUS" >> email.txt
+          echo "" >> email.txt
+          echo "Status: $STATUS" >> email.txt
+          echo "Report: $REPORT_LINK" >> email.txt
+          echo "Timestamp: $TIMESTAMP" >> email.txt
 
           curl -s --url "smtps://smtp.gmail.com:465" --ssl-reqd \
             --mail-from "${{ secrets.EMAIL_USER }}" \
