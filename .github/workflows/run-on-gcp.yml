@@ -26,22 +26,17 @@ jobs:
             
       - name: Upload Extent Report and Generate Signed URL
         run: |
-          echo "${{ secrets.GCP_SIGNER_KEY }}" | sed 's/\\\\n/\\n/g' > gcp-key.json
+          echo "${{ secrets.GCP_SIGNER_KEY_BASE64 }}" | base64 -d > gcp-key.json
           gcloud auth activate-service-account --key-file=gcp-key.json
           gcloud config set project selenium-testing-lab
           
           if [ -f test-output/ExtentReport.html ]; then
-                TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-                FILE_NAME="ExtentReport_$TIMESTAMP.html"
-                gsutil cp test-output/ExtentReport.html gs://selenium-test-reports/reports/$FILE_NAME
-          fi          
-
-          # Install openssl (needed for signurl)
-          sudo apt-get update && sudo apt-get install -y openssl
-
-          # Download gsutil signurl helper if needed
-          URL=$(gsutil signurl -d 24h gcp-key.json gs://selenium-test-reports/reports/$FILE_NAME | tail -n 1 | awk '{print $5}')
-          echo "REPORT_LINK=$URL" >> $GITHUB_ENV
+            TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+            gsutil cp test-output/ExtentReport.html gs://selenium-test-reports/reports/ExtentReport_$TIMESTAMP.html
+            echo "https://storage.cloud.google.com/selenium-test-reports/reports/ExtentReport_$TIMESTAMP.html" > report-url.txt
+          else
+            echo "Report not found"
+          fi
             
       - name: Send Email Notification
         if: always()
@@ -51,7 +46,10 @@ jobs:
                 STATUS="❌ Failed"
             fi
             
+            REPORT_LINK=$(cat report-url.txt)
             TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+            
+            cat <<EOF > email.txt
             
             echo "From: Selenium Tests <${{ secrets.EMAIL_USER }}>" > email.txt
             echo "To: ${{ secrets.EMAIL_TO }}" >> email.txt
