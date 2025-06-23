@@ -23,7 +23,7 @@ jobs:
             cd selenium-gcp
             git pull origin main
             mvn clean test
-            
+
       - name: Upload Extent Report and Generate Signed URL
         run: |
           echo "${{ secrets.GCP_SIGNER_KEY_BASE64 }}" | base64 -d > gcp-key.json
@@ -35,22 +35,21 @@ jobs:
             gsutil cp test-output/ExtentReport.html gs://selenium-test-reports/reports/ExtentReport_$TIMESTAMP.html
             echo "https://storage.cloud.google.com/selenium-test-reports/reports/ExtentReport_$TIMESTAMP.html" > report-url.txt
           else
-            echo "Report not found"
+            echo "Report not found" > report-url.txt
           fi
-            
+
       - name: Send Email Notification
         if: always()
         run: |
-            STATUS="✅ Passed"
-            if [ "${{ job.status }}" != "success" ]; then
-                STATUS="❌ Failed"
-            fi
-            
-            REPORT_LINK=$(cat report-url.txt)
-            TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
-            
-            cat <<EOF > email.txt
+          STATUS="✅ Passed"
+          if [ "${{ job.status }}" != "success" ]; then
+            STATUS="❌ Failed"
+          fi
 
+          REPORT_LINK=$(cat report-url.txt)
+          TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
+
+          cat <<EOF > email.txt
 From: Selenium Tests <${{ secrets.EMAIL_USER }}>
 To: ${{ secrets.EMAIL_TO }}
 Subject: Selenium Test Report - $STATUS
@@ -60,8 +59,8 @@ Report: $REPORT_LINK
 Timestamp: $TIMESTAMP
 EOF
 
-    curl -s --url "smtps://smtp.gmail.com:465" --ssl-reqd \
-      --mail-from "${{ secrets.EMAIL_USER }}" \
-      --mail-rcpt "${{ secrets.EMAIL_TO }}" \
-      --upload-file email.txt \
-      --user "${{ secrets.EMAIL_USER }}:${{ secrets.EMAIL_PASSWORD }}"
+          curl -s --url "smtps://smtp.gmail.com:465" --ssl-reqd \
+            --mail-from "${{ secrets.EMAIL_USER }}" \
+            --mail-rcpt "${{ secrets.EMAIL_TO }}" \
+            --upload-file email.txt \
+            --user "${{ secrets.EMAIL_USER }}:${{ secrets.EMAIL_PASSWORD }}"
